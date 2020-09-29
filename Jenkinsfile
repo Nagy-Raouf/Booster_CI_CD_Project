@@ -1,13 +1,29 @@
-FROM ubuntu:18.04
-RUN apt-get update -qq
-RUN apt-get install python3-pip -qq
-RUN pip3 --version
-ADD . /simpleApp
-WORKDIR /simpleApp
-COPY . .
-RUN apt-get update -qq
-EXPOSE 8000
-RUN pip3 install -r requirements.txt
-RUN python3.6 manage.py makemigrations
-RUN python3.6 manage.py migrate
-CMD ["python3.6", "manage.py", "runserver", "0.0.0.0:8000"]
+pipeline {
+    agent any
+
+    stages {
+        stage('Build') {
+                steps {
+                    sh 'docker build -f dockerfile . -t nagyraouf/dajngoo:v1.0'
+                      }
+                   post{
+                    success{
+                         slackSend(color: '#00FF00',message: "BUILDSTART: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]'(${env.BUILD_URL}console)")
+                      }
+                  }
+            }
+        stage('Push') {
+            steps {
+                withCredentials([usernamePassword(credentialsId:"docker",usernameVariable:"USERNAME",passwordVariable:"PASSWORD")]){
+                sh 'docker login --username $USERNAME --password $PASSWORD'
+                sh 'docker push nagyraouf/dajngoo:v1.0'
+                }
+            }
+        }
+         stage('Deploy') {
+            steps {
+                sh 'docker run -d -p 7000:3000 nagyraouf/dajngoo:v1.0'
+            }  
+    }
+  }
+}
