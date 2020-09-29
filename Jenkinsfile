@@ -22,7 +22,7 @@ pipeline {
         }
          stage('Deploy') {
             steps {
-                sh 'docker run -d -p 7000:3000 nagyraouf/dajngoo:v1.0'
+                sh 'docker run -d -p 5000:3000 nagyraouf/dajngoo:v1.0'
             }  
     }
   }
